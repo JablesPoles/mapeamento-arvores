@@ -1,0 +1,260 @@
+/* Reset básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: #f4f9f4;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  border: 1px solid #c6d4bc;
+}
+
+header {
+  font-family: 'Poppins', sans-serif;
+  background: #4CAF50;
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+main {
+  flex: 1;
+  display: flex;
+  padding: 1rem 2rem;
+  gap: 2rem;
+  overflow-y: auto;
+}
+
+/* Container lateral para categorias + pesquisa */
+.sidebar {
+  background-color: #f9f9f9;
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.search-container {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+label[for="busca"] {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+#busca {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+#busca:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+/* Lista de árvores detalhada = um card por vez */
+.tree-list {
+  flex: 1;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+article.tree-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+article.tree-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+article.tree-card img {
+  width: 280px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 1rem;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+article.tree-card:hover img {
+  transform: scale(1.1);
+  filter: blur(2px);
+}
+
+.tree-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.tree-info h3 {
+  color: #2a4d2c;
+  font-size: 1.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.tree-info p {
+  font-size: 1.05rem;
+  color: #4a6b46;
+  line-height: 1.4rem;
+  margin-bottom: 0.25rem;
+}
+
+.tree-info dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem 1.4rem;
+}
+
+.tree-info dt {
+  font-weight: 700;
+  color: #3a6a32;
+}
+
+.tree-info dd {
+  margin: 0;
+  color: #556b4f;
+  font-style: normal;
+}
+
+footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: white;
+  background: #2c6f2f;
+  padding: 1.2rem 0;
+  border-top: 1px solid #b5c5ae;
+}
+
+/* Estilização dos botões de navegação */
+button, nav button {
+  border: none;
+  background-color: #3a6a32;
+  color: white;
+  padding: 10px 15px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover, nav button:hover {
+  background-color: #4caf50;
+  transform: scale(1.05);
+}
+
+/* Scrollbar estilizado para nav e lista */
+nav::-webkit-scrollbar,
+.tree-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+nav::-webkit-scrollbar-track,
+.tree-list::-webkit-scrollbar-track {
+  background: #b9d0b8;
+  border-radius: 4px;
+}
+
+nav::-webkit-scrollbar-thumb,
+.tree-list::-webkit-scrollbar-thumb {
+  background: #3a6a32;
+  border-radius: 4px;
+}
+
+.tree-list {
+  scrollbar-width: thin;
+  scrollbar-color: #3a6a32 #b9d0b8;
+}
+
+nav {
+  scrollbar-width: thin;
+  scrollbar-color: #3a6a32 #b9d0b8;
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+  main {
+    flex-direction: column;
+    padding: 1rem 1.2rem;
+  }
+
+  .sidebar {
+    flex: none;
+    width: 100%;
+    max-height: 260px;
+    margin-bottom: 2rem;
+  }
+
+  article.tree-card img {
+    width: 180px;
+    height: 130px;
+  }
+
+  .tree-info h3 {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 600px) {
+  nav {
+    max-height: 140px;
+  }
+
+  nav button {
+    flex: 1 0 100%;
+    margin: 0.15rem 0 0.15rem 0;
+    padding: 0.5rem 1rem;
+  }
+
+  .tree-list {
+    max-height: none;
+  }
+
+  article.tree-card {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  article.tree-card img {
+    width: 100%;
+    max-height: 220px;
+  }
+
+  .tree-info dl {
+    grid-template-columns: 1fr;
+    gap: 0.3rem 0;
+  }
+}
