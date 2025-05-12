@@ -1,38 +1,65 @@
-<?php 
+<?php
 require 'conexao.php';
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $sql = "INSERT INTO arvore (
-        nome_c, nat_exo, horario, localizacao, vegetacao, especie,
-        diametro_peito, estado_fitossanitario, estado_tronco,
-        estado_copa, tamanho_calcada, espaco_arvore, raizes,
-        acessibilidade, curiosidade
-    ) VALUES (
-        :nome, :nat_exo, :horario, :local, :vegetacao, :especie,
-        :diametro, :fitossanitario, :tronco, :copa, :calcada,
-        :espaco, :raizes, :acessibilidade, :curiosidade
-    )";
+    try {
+        $pdo->beginTransaction();
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        ':nome' => $_POST['nome_c'],
-        ':nat_exo' => $_POST['nat_exo'],
-        ':horario' => $_POST['horario'],
-        ':local' => $_POST['localizacao'],
-        ':vegetacao' => $_POST['vegetacao'],
-        ':especie' => $_POST['especie'],
-        ':diametro' => $_POST['diametro_peito'],
-        ':fitossanitario' => $_POST['estado_fitossanitario'],
-        ':tronco' => $_POST['estado_tronco'],
-        ':copa' => $_POST['estado_copa'],
-        ':calcada' => $_POST['tamanho_calcada'],
-        ':espaco' => $_POST['espaco_arvore'],
-        ':raizes' => $_POST['raizes'],
-        ':acessibilidade' => $_POST['acessibilidade'],
-        ':curiosidade' => $_POST['curiosidade'],
-    ]);
+        $sqlArvore = "INSERT INTO arvore (
+            nome_c, nat_exo, horario, localizacao, vegetacao, especie,
+            diametro_peito, estado_fitossanitario, estado_tronco,
+            estado_copa, tamanho_calcada, espaco_arvore, raizes,
+            acessibilidade, curiosidade
+        ) VALUES (
+            :nome, :nat_exo, :horario, :localizacao, :vegetacao, :especie,
+            :diametro, :fitossanitario, :tronco, :copa, :calcada,
+            :espaco, :raizes, :acessibilidade, :curiosidade
+        )";
 
-    $msg = "Árvore cadastrada com sucesso.";
+        $stmt = $pdo->prepare($sqlArvore);
+        $stmt->execute([
+            ':nome' => $_POST['nome_c'],
+            ':nat_exo' => $_POST['nat_exo'],
+            ':horario' => $_POST['horario'],
+            ':localizacao' => $_POST['localizacao'],
+            ':vegetacao' => $_POST['vegetacao'],
+            ':especie' => $_POST['especie'],
+            ':diametro' => $_POST['diametro_peito'],
+            ':fitossanitario' => $_POST['estado_fitossanitario'],
+            ':tronco' => $_POST['estado_tronco'],
+            ':copa' => $_POST['estado_copa'],
+            ':calcada' => $_POST['tamanho_calcada'],
+            ':espaco' => $_POST['espaco_arvore'],
+            ':raizes' => $_POST['raizes'],
+            ':acessibilidade' => $_POST['acessibilidade'],
+            ':curiosidade' => $_POST['curiosidade'],
+        ]);
+
+        $idArvore = $pdo->lastInsertId();
+
+        if (!empty($_POST['nome_p'])) {
+            foreach ($_POST['nome_p'] as $nomePop) {
+                $nomePop = trim($nomePop);
+                if ($nomePop !== '') {
+                    $stmtNome = $pdo->prepare("INSERT INTO nomes_populares (nome) VALUES (:nome)");
+                    $stmtNome->execute([':nome' => $nomePop]);
+                    $idNome = $pdo->lastInsertId();
+
+                    $stmtRel = $pdo->prepare("INSERT INTO nomes_populares_arvore (fk_arvore, fk_np) VALUES (:arvore, :np)");
+                    $stmtRel->execute([
+                        ':arvore' => $idArvore,
+                        ':np' => $idNome
+                    ]);
+                }
+            }
+        }
+
+        $pdo->commit();
+        $msg = "Árvore e nomes populares cadastrados com sucesso.";
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $msg = "Erro ao cadastrar: " . $e->getMessage();
+    }
 }
 ?>
 
@@ -252,13 +279,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <footer>&copy; 2025 - Cadastro de Árvores</footer>
 
   <script>
+    let numero = 2;
     function adicionarCampo() {
       const container = document.getElementById('nomes-populares-container');
       const input = document.createElement('input');
+      
       input.type = 'text';
       input.name = 'nome_p[]';
-      input.placeholder = 'Outro nome popular';
+      input.placeholder = `Nome popular ${numero}`;
       container.appendChild(input);
+      numero+=1;
     }
   </script>
 </body>
