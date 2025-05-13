@@ -17,5 +17,4 @@ try {
     ]);
 } catch (PDOException $e) {
     die("Erro ao conectar ao banco: " . $e->getMessage());
-}
-?>
+}?>

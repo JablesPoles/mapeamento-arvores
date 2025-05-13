@@ -1,70 +1,76 @@
-<?php
+<?php 
 require 'conexao.php';
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    try {
-        $pdo->beginTransaction();
+    $sql = "INSERT INTO arvore (
+        nome_c, nat_exo, horario, localizacao, vegetacao, especie,
+        diametro_peito, estado_fitossanitario, estado_tronco,
+        estado_copa, tamanho_calcada, espaco_arvore, raizes,
+        acessibilidade, curiosidade
+    ) VALUES (
+        :nome, :nat_exo, :horario, :local, :vegetacao, :especie,
+        :diametro, :fitossanitario, :tronco, :copa, :calcada,
+        :espaco, :raizes, :acessibilidade, :curiosidade
+    )";
 
-        $sqlArvore = "INSERT INTO arvore (
-            nome_c, nat_exo, horario, localizacao, vegetacao, especie,
-            diametro_peito, estado_fitossanitario, estado_tronco,
-            estado_copa, tamanho_calcada, espaco_arvore, raizes,
-            acessibilidade, curiosidade
-        ) VALUES (
-            :nome, :nat_exo, :horario, :localizacao, :vegetacao, :especie,
-            :diametro, :fitossanitario, :tronco, :copa, :calcada,
-            :espaco, :raizes, :acessibilidade, :curiosidade
-        )";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':nome' => $_POST['nome_c'],
+        ':nat_exo' => $_POST['nat_exo'],
+        ':horario' => $_POST['horario'],
+        ':local' => $_POST['localizacao'],
+        ':vegetacao' => $_POST['vegetacao'],
+        ':especie' => $_POST['especie'],
+        ':diametro' => $_POST['diametro_peito'],
+        ':fitossanitario' => $_POST['estado_fitossanitario'],
+        ':tronco' => $_POST['estado_tronco'],
+        ':copa' => $_POST['estado_copa'],
+        ':calcada' => $_POST['tamanho_calcada'],
+        ':espaco' => $_POST['espaco_arvore'],
+        ':raizes' => $_POST['raizes'],
+        ':acessibilidade' => $_POST['acessibilidade'],
+        ':curiosidade' => $_POST['curiosidade'],
+    ]);
+    // Inserir nomes populares
+if (isset($_POST['nome_p']) && is_array($_POST['nome_p'])) {
+  $arvoreId = $pdo->lastInsertId(); // Obtém o ID da árvore cadastrada
 
-        $stmt = $pdo->prepare($sqlArvore);
-        $stmt->execute([
-            ':nome' => $_POST['nome_c'],
-            ':nat_exo' => $_POST['nat_exo'],
-            ':horario' => $_POST['horario'],
-            ':localizacao' => $_POST['localizacao'],
-            ':vegetacao' => $_POST['vegetacao'],
-            ':especie' => $_POST['especie'],
-            ':diametro' => $_POST['diametro_peito'],
-            ':fitossanitario' => $_POST['estado_fitossanitario'],
-            ':tronco' => $_POST['estado_tronco'],
-            ':copa' => $_POST['estado_copa'],
-            ':calcada' => $_POST['tamanho_calcada'],
-            ':espaco' => $_POST['espaco_arvore'],
-            ':raizes' => $_POST['raizes'],
-            ':acessibilidade' => $_POST['acessibilidade'],
-            ':curiosidade' => $_POST['curiosidade'],
-        ]);
+  // Loop para inserir os nomes populares
+  foreach ($_POST['nome_p'] as $nomePopular) {
+      if (!empty($nomePopular)) { // Verificar se o nome não está vazio
+          // Verificar se o nome popular já existe na tabela NOMES_POPULARES
+          $sqlVerificaNome = "SELECT ID_NOME FROM NOMES_POPULARES WHERE NOME = :nome_popular";
+          $stmtVerificaNome = $pdo->prepare($sqlVerificaNome);
+          $stmtVerificaNome->execute([':nome_popular' => $nomePopular]);
+          $nomeExistente = $stmtVerificaNome->fetch(PDO::FETCH_ASSOC);
 
-        $idArvore = $pdo->lastInsertId();
+          if (!$nomeExistente) {
+              // Nome não existe, inserir na tabela NOMES_POPULARES
+              $sqlInserirNome = "INSERT INTO NOMES_POPULARES (NOME) VALUES (:nome_popular)";
+              $stmtInserirNome = $pdo->prepare($sqlInserirNome);
+              $stmtInserirNome->execute([':nome_popular' => $nomePopular]);
+              $nomeExistente['ID_NOME'] = $pdo->lastInsertId(); // Recupera o ID do novo nome inserido
+          }
 
-        if (!empty($_POST['nome_p'])) {
-            foreach ($_POST['nome_p'] as $nomePop) {
-                $nomePop = trim($nomePop);
-                if ($nomePop !== '') {
-                    $stmtNome = $pdo->prepare("INSERT INTO nomes_populares (nome) VALUES (:nome)");
-                    $stmtNome->execute([':nome' => $nomePop]);
-                    $idNome = $pdo->lastInsertId();
+          // Inserir a relação na tabela NOMES_POPULARES_ARVORE
+          $sqlNome = "INSERT INTO NOMES_POPULARES_ARVORE (FK_ARVORE, FK_NP) VALUES (:arvore_id, :nome_popular)";
+          $stmtNome = $pdo->prepare($sqlNome);
+          $stmtNome->execute([
+              ':arvore_id' => $arvoreId,
+              ':nome_popular' => $nomeExistente['ID_NOME'] // Usar o ID do nome popular
+          ]);
+      }
+  }
+}
 
-                    $stmtRel = $pdo->prepare("INSERT INTO nomes_populares_arvore (fk_arvore, fk_np) VALUES (:arvore, :np)");
-                    $stmtRel->execute([
-                        ':arvore' => $idArvore,
-                        ':np' => $idNome
-                    ]);
-                }
-            }
-        }
 
-        $pdo->commit();
-        $msg = "Árvore e nomes populares cadastrados com sucesso.";
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $msg = "Erro ao cadastrar: " . $e->getMessage();
-    }
+    $msg = "Árvore cadastrada com sucesso.";
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="pt-BR">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -136,6 +142,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       background-color: var(--primary-light);
     }
 
+    .remove-btn {
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .remove-btn:hover {
+      background-color: darkred;
+    }
+
     .btn-submit {
       background-color: var(--secondary);
       padding: 10px 20px;
@@ -167,17 +187,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       .form-group textarea {
         font-size: 0.95rem;
       }
-      
+
       .add-btn, .btn-submit {
         width: 100%;
       }
     }
-
-    
-
   </style>
-
-  
 </head>
 <body>
   <header>  
@@ -191,7 +206,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
   <main class="admin">
     <div class="form-container">
-      
       <h2>Cadastrar Nova Árvore</h2>
       <?php if (isset($msg)): ?>
       <p style="color: green; font-weight: bold; text-align: center;">
@@ -266,7 +280,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           <div class="form-group">
             <label>Nome(s) Popular(es)</label>
             <div id="nomes-populares-container">
-              <input type="text" name="nome_p[]" placeholder="Nome popular 1" />
+              <input type="text" name="nome_p[]" placeholder="Nome popular 1" maxlength="100" required />
             </div>
             <button type="button" class="add-btn" onclick="adicionarCampo()">+ Adicionar Nome</button>
           </div>
@@ -279,16 +293,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <footer>&copy; 2025 - Cadastro de Árvores</footer>
 
   <script>
-    let numero = 2;
     function adicionarCampo() {
       const container = document.getElementById('nomes-populares-container');
+
+      // Criar o input de nome popular
       const input = document.createElement('input');
-      
       input.type = 'text';
-      input.name = 'nome_p[]';
-      input.placeholder = `Nome popular ${numero}`;
+      input.name = 'nome_p[]';  // Garantir que o nome do campo seja 'nome_p[]'
+      input.placeholder = 'Outro nome popular';
+      input.maxLength = 100;
+      input.required = true;
+
+      // Criar o botão de remoção
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = 'Remover';
+      removeBtn.classList.add('remove-btn');
+      removeBtn.onclick = function() {
+        container.removeChild(input);
+        container.removeChild(removeBtn);
+      };
+
+      // Adicionar os elementos ao container
       container.appendChild(input);
-      numero+=1;
+      container.appendChild(removeBtn);
     }
   </script>
 </body>
