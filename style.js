@@ -110,5 +110,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('AOS (Animate On Scroll) não está definido. Verifique se a biblioteca foi carregada corretamente.');
     }
 });
-
-
