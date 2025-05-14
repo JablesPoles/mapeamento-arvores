@@ -1,8 +1,8 @@
 <?php
-require '../conexao.php';
+require __DIR__ . '/../conexao.php';
 
 // Verifica se o arquivo CSV existe
-$csvFile = __DIR__ . '/data/dados_arvore.csv';
+$csvFile = __DIR__ . '/../data/dados_arvore.csv';
 if (!file_exists($csvFile)) {
     die("Arquivo CSV não encontrado em: $csvFile");
 }
