@@ -110,3 +110,41 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('AOS (Animate On Scroll) não está definido. Verifique se a biblioteca foi carregada corretamente.');
     }
 });
+
+tailwind.config = {
+    darkMode: 'class', 
+    theme: {
+      extend: {
+        colors: {
+          primary: '#2E7D32',
+          'primary-light': '#4CAF50',
+          'primary-lighter': '#E8F5E9',
+          secondary: '#FFA000',
+          accent: '#00796B',
+          'card-border': '#4CAF50',
+          'card-hover': 'rgba(46, 125, 50, 0.05)',
+          'light-bg': '#f7faf7',
+          'dark-bg': '#1a202c',        
+          'dark-card': '#2d3748',      
+          'dark-card-header': '#1f2937',
+          'dark-text': '#e2e8f0',      
+          'dark-primary': '#38a169',   
+          'dark-primary-hover': '#2f855a',
+          'dark-secondary': '#dd6b20', 
+          'dark-border': '#4a5568',    
+        },
+        boxShadow: {
+          'card': '0 2px 8px rgba(0, 0, 0, 0.08)',
+          'card-hover': '0 4px 12px rgba(0, 0, 0, 0.12)'
+        },
+        maxHeight: {
+          '0': '0',
+          '9999px': '9999px' 
+        },
+        transitionProperty: {
+          'height': 'height',
+          'max-height': 'max-height',
+        }
+      }
+    }
+  }

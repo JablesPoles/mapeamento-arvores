@@ -1,8 +1,76 @@
 <?php
 require 'conexao.php'; 
 
+function buscarImagensPlantNet($nomeCientifico) {
+  $apiUrl = "https://api.plantnet.org/v1/projects/k-world-flora/species/" . 
+            rawurlencode(trim($nomeCientifico)) . "?lang=pt-br&truncated=true";
+  
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $apiUrl);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+  $headers = [
+      'Accept: application/json',
+      'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+  ];
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+  $response = curl_exec($ch);
+
+  if (curl_errno($ch)) {
+      curl_close($ch);
+      return null;
+  }
+
+  curl_close($ch);
+  
+  $data = json_decode($response, true);
+
+  if (json_last_error() !== JSON_ERROR_NONE || !isset($data['images'])) {
+      return null;
+  }
+
+  $tiposImagens = ['fruit', 'leaf', 'bark', 'habit', 'flower'];
+  $imagensEncontradas = [];
+
+  foreach ($tiposImagens as $tipo) {
+      if (!empty($data['images'][$tipo]) && is_array($data['images'][$tipo])) {
+          $primeiraImagem = $data['images'][$tipo][0];
+          if (isset($primeiraImagem['url'])) {
+              $imagensEncontradas[$tipo] = $primeiraImagem['url'];
+          } elseif (isset($primeiraImagem['m'])) {
+              $imagensEncontradas[$tipo] = $primeiraImagem['m'];
+          }
+      }
+  }
+
+  return !empty($imagensEncontradas) ? $imagensEncontradas : null;
+}
+
+// A partir daqui continua o restante do seu código normalmente
+
+
+$itensPorPagina = 10; 
+$pagina = isset($_GET['pagina']) && is_numeric($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$offset = ($pagina - 1) * $itensPorPagina;
 $filtro = isset($_GET['busca']) ? urldecode($_GET['busca']) : '';
 $params = [];
+
+$sqlContagem = "SELECT COUNT(DISTINCT arvore.id) AS total
+                FROM arvore
+                LEFT JOIN NOMES_POPULARES_ARVORE npa ON arvore.id = npa.FK_ARVORE
+                LEFT JOIN NOMES_POPULARES np ON npa.FK_NP = np.ID_NOME";
+
+if (!empty($filtro)) {
+    $sqlContagem .= " WHERE (LOWER(arvore.nome_c) LIKE :filtro OR LOWER(np.NOME) LIKE :filtro)";
+}
+
+$stmtContagem = $pdo->prepare($sqlContagem);
+$stmtContagem->execute(!empty($filtro) ? [':filtro' => '%' . strtolower($filtro) . '%'] : []);
+$totalResultados = $stmtContagem->fetchColumn();
+$totalPaginas = ceil($totalResultados / $itensPorPagina);
 
 $sql = "SELECT arvore.*, STRING_AGG(np.NOME, ', ' ORDER BY np.NOME) AS nomes_populares
         FROM arvore
@@ -14,13 +82,19 @@ if (!empty($filtro)) {
     $params[':filtro'] = '%' . strtolower($filtro) . '%';
 }
 
-// Se o ID da árvore é a chave primária e única para agrupar, esta simplificação é válida.
-// Caso contrário, você precisará listar todas as colunas não agregadas da tabela 'arvore'.
-$sql .= " GROUP BY arvore.id ORDER BY arvore.horario DESC"; 
+$sql .= " GROUP BY arvore.id ORDER BY arvore.horario DESC LIMIT :limit OFFSET :offset";
+
 
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute($params);
+
+if (!empty($filtro)) {
+    $stmt->bindValue(':filtro', '%' . strtolower($filtro) . '%', PDO::PARAM_STR);
+}
+$stmt->bindValue(':limit', $itensPorPagina, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+$stmt->execute();
 $arvores = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -245,35 +319,92 @@ $arvores = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 
                 <div class="mt-6">
-                  <h4 class="text-xl font-semibold text-green-700 dark:text-dark-primary mb-4">Galeria</h4>
-                  <div class="swiper gallery-swiper-<?php echo $arvore['id']; ?>">
-                    <div class="swiper-wrapper">
-                      <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
-                        <img src="https://placehold.co/600x300/E8F5E9/2E7D32?text=Folha+de+<?php echo urlencode(htmlspecialchars($arvore['nome_c'])); ?>" alt="Folha da <?php echo htmlspecialchars($arvore['nome_c']); ?>" onerror="this.src='https://placehold.co/600x300/E8F5E9/2E7D32?text=Imagem+Indisponível'; this.alt='Imagem da folha indisponível'">
-                      </div>
-                      <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
-                         <img src="https://placehold.co/600x300/E8F5E9/2E7D32?text=Flor+de+<?php echo urlencode(htmlspecialchars($arvore['nome_c'])); ?>" alt="Flor da <?php echo htmlspecialchars($arvore['nome_c']); ?>" onerror="this.src='https://placehold.co/600x300/E8F5E9/2E7D32?text=Imagem+Indisponível'; this.alt='Imagem da flor indisponível'">
-                      </div>
-                      <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
-                         <img src="https://placehold.co/600x300/E8F5E9/2E7D32?text=Fruta+de+<?php echo urlencode(htmlspecialchars($arvore['nome_c'])); ?>" alt="Fruta da <?php echo htmlspecialchars($arvore['nome_c']); ?>" onerror="this.src='https://placehold.co/600x300/E8F5E9/2E7D32?text=Imagem+Indisponível'; this.alt='Imagem da fruta indisponível'">
-                      </div>
-                       <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
-                         <img src="https://placehold.co/600x300/E8F5E9/2E7D32?text=Copa+de+<?php echo urlencode(htmlspecialchars($arvore['nome_c'])); ?>" alt="Copa da <?php echo htmlspecialchars($arvore['nome_c']); ?>" onerror="this.src='https://placehold.co/600x300/E8F5E9/2E7D32?text=Imagem+Indisponível'; this.alt='Imagem da copa indisponível'">
-                      </div>
-                       <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
-                         <img src="https://placehold.co/600x300/E8F5E9/2E7D32?text=Casco+de+<?php echo urlencode(htmlspecialchars($arvore['nome_c'])); ?>" alt="Casco da <?php echo htmlspecialchars($arvore['nome_c']); ?>" onerror="this.src='https://placehold.co/600x300/E8F5E9/2E7D32?text=Imagem+Indisponível'; this.alt='Imagem do casco indisponível'">
-                      </div>
+    <h4 class="text-xl font-semibold text-green-700 dark:text-dark-primary mb-4">Galeria</h4>
+    <?php
+    // Busca imagens da API PlantNet
+    $imagensArvore = buscarImagensPlantNet($arvore['especie']);
+    ?>
+    <div class="swiper gallery-swiper-<?php echo $arvore['id']; ?>">
+        <div class="swiper-wrapper">
+            <?php if ($imagensArvore): ?>
+                <?php foreach ($imagensArvore as $tipo => $url): ?>
+                    <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
+                        <img src="<?php echo htmlspecialchars($url); ?>" 
+                             alt="<?php echo htmlspecialchars(ucfirst($tipo) . ' da ' . $arvore['nome_c']); ?>"
+                             onerror="this.src='https://placehold.co/600x300/E8F5E9/2E7D32?text=Imagem+Indispon%C3%ADvel'; this.alt='Imagem indisponível'">
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-center">
+                            <?php echo htmlspecialchars(ucfirst($tipo)); ?>
+                        </div>
                     </div>
-                    <div class="swiper-button-next"></div>
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-pagination"></div>
-                  </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            
+            <!-- Fallback para quando não há imagens da API -->
+            <?php if (empty($imagensArvore)): ?>
+                <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
+                    <img src="https://placehold.co/600x300/E8F5E9/2E7D32?text=Folha+de+<?php echo urlencode(htmlspecialchars($arvore['nome_c'])); ?>" 
+                         alt="Folha da <?php echo htmlspecialchars($arvore['nome_c']); ?>">
                 </div>
+                <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
+                    <img src="https://placehold.co/600x300/E8F5E9/2E7D32?text=Flor+de+<?php echo urlencode(htmlspecialchars($arvore['nome_c'])); ?>" 
+                         alt="Flor da <?php echo htmlspecialchars($arvore['nome_c']); ?>">
+                </div>
+            <?php endif; ?>
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
+    </div>
+</div>
               </div>
             </div>
           </article>
         <?php endforeach; ?>
       </div>
+      <?php if ($totalPaginas > 1): ?>
+        <?php
+          $limite = 10;
+          $inicio = max(1, $pagina - floor($limite / 2));
+          $fim = min($totalPaginas, $inicio + $limite - 1);
+          if ($fim - $inicio + 1 < $limite) {
+              $inicio = max(1, $fim - $limite + 1);
+          }
+        ?>
+        <nav class="mt-10 flex justify-center">
+          <ul class="inline-flex items-center space-x-1 bg-white dark:bg-dark-card rounded-lg p-2 shadow">
+            <?php if ($pagina > 1): ?>
+              <li>
+                <a href="?<?php echo http_build_query(['busca' => $filtro, 'pagina' => $pagina - 1]); ?>"
+                  class="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm">
+                  &laquo;
+                </a>
+              </li>
+            <?php endif; ?>
+
+            <?php for ($i = $inicio; $i <= $fim; $i++): ?>
+              <li>
+                <a href="?<?php echo http_build_query(['busca' => $filtro, 'pagina' => $i]); ?>"
+                  class="px-3 py-1 rounded-md text-sm
+                    <?= $i === $pagina
+                      ? 'bg-green-600 text-white font-semibold'
+                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200' ?>">
+                  <?= $i ?>
+                </a>
+              </li>
+            <?php endfor; ?>
+
+            <?php if ($pagina < $totalPaginas): ?>
+              <li>
+                <a href="?<?php echo http_build_query(['busca' => $filtro, 'pagina' => $pagina + 1]); ?>"
+                  class="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm">
+                  &raquo;
+                </a>
+              </li>
+            <?php endif; ?>
+          </ul>
+        </nav>
+      <?php endif; ?>
+
     <?php endif; ?>
   </section>
 </main>
