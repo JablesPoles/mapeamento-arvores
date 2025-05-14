@@ -96,7 +96,8 @@
     #theme-toggle-button svg {
         transition: opacity 0.3s ease, transform 0.3s ease;
     }
-  </style>
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-light-bg dark:bg-dark-bg text-gray-800 dark:text-dark-text">
 
@@ -312,6 +313,6 @@
         console.warn('Swiper não está definido ou o container .mySwiper não foi encontrado.');
       }
     });
-  </script>
+</script>
 </body>
 </html>
