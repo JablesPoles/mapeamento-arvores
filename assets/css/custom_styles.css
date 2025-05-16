@@ -1,0 +1,71 @@
+/* assets/css/custom_styles.css */
+.swiper {
+    width: 100%;
+    height: 300px; /* Ou ajuste conforme necessidade */
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    background-color: #f7faf7; /* Cor de fundo para modo claro */
+}
+html.dark .swiper {
+    background-color: #2d3748; /* Cor de fundo para modo escuro */
+}
+.swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    text-align: center;
+    overflow: hidden; /* Evita que a legenda da imagem vaze se a imagem não carregar */
+}
+.swiper-slide img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+.swiper-button-next, .swiper-button-prev {
+    color: #4CAF50; /* Cor primária */
+    padding: 0 15px; /* Adiciona um pouco de preenchimento para melhor clique */
+    --swiper-navigation-size: 30px; /* Ajusta o tamanho dos ícones */
+}
+html.dark .swiper-button-next, html.dark .swiper-button-prev {
+    color: #FFA000; /* Cor secundária para modo escuro */
+}
+.swiper-pagination-bullet-active {
+    background: #4CAF50; /* Cor primária */
+}
+html.dark .swiper-pagination-bullet-active {
+    background: #FFA000; /* Cor secundária para modo escuro */
+}
+
+/* Estilos globais que estavam no seu <style> original */
+html, body {
+    height: 100%;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+body {
+    padding-top: 5rem; /* Ajuste conforme a altura do seu header fixo */
+    display: flex;
+    flex-direction: column;
+}
+main {
+    flex-grow: 1;
+}
+#theme-toggle-button svg {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Ajustes para o card expansível (opcional, mas pode melhorar a animação) */
+.tree-details {
+    transition: max-height 0.7s ease-in-out, padding-top 0.7s ease-in-out, padding-bottom 0.7s ease-in-out, opacity 0.5s ease-in-out;
+    opacity: 0; /* Começa invisível */
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.tree-details.max-h-\[9999px\] { /* Use o nome da classe Tailwind que você definiu */
+    opacity: 1;
+    padding-top: 2rem; /* p-8 do Tailwind */
+    padding-bottom: 2rem; /* p-8 do Tailwind */
+}
+

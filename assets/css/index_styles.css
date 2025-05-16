@@ -1,0 +1,50 @@
+html { scroll-behavior: smooth; }
+body {
+    padding-top: 5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+main {
+    flex-grow: 1;
+}
+.hero-section-text-shadow {
+    text-shadow: 1px 1px 3px rgba(0, 54, 10, 0.7);
+}
+.swiper-slide img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+.swiper-pagination-bullet-active {
+    background: var(--swiper-theme-color, #2E7D32) !important;
+}
+html.dark .swiper-pagination-bullet-active {
+    background: var(--swiper-theme-color-dark, #4CAF50) !important;
+}
+.swiper-button-next, .swiper-button-prev {
+    color: var(--swiper-theme-color, #2E7D32) !important;
+}
+html.dark .swiper-button-next, html.dark .swiper-button-prev {
+    color: var(--swiper-theme-color-dark, #4CAF50) !important;
+}
+.video-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#theme-toggle-button svg {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
