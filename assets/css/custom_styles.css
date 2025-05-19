@@ -8,6 +8,7 @@
 }
 html.dark .swiper {
     background-color: #2d3748; /* Cor de fundo para modo escuro */
+    color: #2d3748; /* Cor clara para o texto no modo escuro */
 }
 .swiper-slide {
     display: flex;

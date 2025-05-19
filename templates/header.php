@@ -1,70 +1,92 @@
 <?php
-    $currentPage = basename($_SERVER['PHP_SELF']);
-    $pageTitle = '';
+$currentPage = basename($_SERVER['PHP_SELF']);
+$pageTitle = '';
 
-    switch ($currentPage) {
-        case 'index.php':
-            $pageTitle = 'Página Inicial';
-            break;
-        case 'admin.php':
-            $pageTitle = 'Painel Administrativo';
-            break;
-        case 'catalogo.php':
-            $pageTitle = 'Catálogo';
-            break;
-        default:
-            $pageTitle = 'Catálogo de Árvores'; // Título padrão
-            break;
-    }
+switch ($currentPage) {
+    case 'index.php':
+        $pageTitle = 'Página Inicial';
+        break;
+    case 'admin.php':
+        $pageTitle = 'Painel Administrativo';
+        break;
+    case 'catalogo.php':
+        $pageTitle = 'Catálogo';
+        break;
+    default:
+        $pageTitle = 'Catálogo de Árvores'; // Título padrão
+        break;
+}
 ?>
 <!DOCTYPE html>
-<html lang="pt-BR" class="">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
+
+    <!-- Tailwind CSS e bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/custom_styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="/assets/css/custom_styles.css" />
     <link rel="stylesheet" href="assets/css/index_styles.css" />
 
     <script>
-        // Configuração do Tailwind CSS (pode ser movida para tailwind.config.js se você usar o CLI do Tailwind)
+        // Define tema dark se preferido pelo usuário ou sistema
+        (function() {
+            try {
+                const theme = localStorage.getItem('theme');
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (theme === 'dark' || (!theme && systemPrefersDark)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {
+                // Ignora erro (ex: localStorage bloqueado)
+            }
+        })();
+    </script>
+
+    <script>
+        // Configuração extendida do Tailwind CSS
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: { /* ...suas cores ... */
+                    colors: {
                         primary: '#2E7D32', 'primary-light': '#4CAF50', 'primary-lighter': '#E8F5E9',
                         secondary: '#FFA000', accent: '#00796B', 'card-border': '#4CAF50',
                         'card-hover': 'rgba(46, 125, 50, 0.05)', 'light-bg': '#f7faf7',
                         'dark-bg': '#1a202c', 'dark-card': '#2d3748', 'dark-card-header': '#1f2937',
                         'dark-text': '#e2e8f0', 'dark-primary': '#38a169', 'dark-primary-hover': '#2f855a',
-                        'dark-secondary': '#dd6b20', 'dark-border': '#4a5568',
+                        'dark-secondary': '#dd6b20', 'dark-border': '#4a5568'
                     },
-                    boxShadow: { /* ... seus boxShadow ... */
-                        'card': '0 2px 8px rgba(0, 0, 0, 0.08)', 'card-hover': '0 4px 12px rgba(0, 0, 0, 0.12)'
+                    boxShadow: {
+                        card: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                        'card-hover': '0 4px 12px rgba(0, 0, 0, 0.12)'
                     },
-                    maxHeight: { /* ... seus maxHeight ... */
-                        '0': '0', '9999px': '9999px'
+                    maxHeight: {
+                        '0': '0',
+                        '9999px': '9999px'
                     },
-                    transitionProperty: { /* ... seus transitionProperty ... */
-                        'height': 'height', 'max-height': 'max-height',
+                    transitionProperty: {
+                        height: 'height',
+                        'max-height': 'max-height'
                     }
                 }
             }
         }
     </script>
-    </head>
+</head>
 <body class="bg-light-bg dark:bg-dark-bg text-gray-800 dark:text-dark-text">
 
 <header class="fixed top-0 left-0 w-full bg-green-700 dark:bg-gray-800 text-white shadow-lg z-50 transition-colors duration-300">
     <div class="container mx-auto flex items-center justify-between px-4 sm:px-6 h-20">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold" data-aos="fade-down" data-aos-delay="100"><?php echo htmlspecialchars($pageTitle); ?></h1>
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold" data-aos="fade-down" data-aos-delay="100">
+            <?php echo htmlspecialchars($pageTitle); ?>
+        </h1>
         <nav class="flex items-center gap-2 md:gap-4">
             <a href="index.php" class="flex items-center gap-2 px-3 py-2 md:px-4 rounded-lg hover:bg-green-600 dark:hover:bg-gray-700 transition text-sm md:text-xl <?php if ($currentPage === 'index.php') echo 'bg-green-600 dark:bg-dark-primary'; ?>">
                 <i class="fas fa-home text-lg md:text-2xl"></i>

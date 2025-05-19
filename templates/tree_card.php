@@ -1,10 +1,11 @@
 <?php
-// Espera-se que $arvore e $imagensArvore (pode ser null) estejam definidos
-if (!isset($arvore)) { return; } // Segurança básica
+if (!isset($arvore)) { return; }
+
 $idArvore = htmlspecialchars($arvore['id']);
 $nomeCientificoArvore = htmlspecialchars($arvore['nome_c']);
 $especieArvore = htmlspecialchars($arvore['especie']);
 ?>
+
 <article class="tree-card bg-white dark:bg-dark-card rounded-xl shadow-md dark:shadow-lg overflow-hidden transition-all duration-300 hover:shadow-lg border-l-8 border-green-600 dark:border-dark-primary">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-green-50 dark:bg-dark-card-header p-6 gap-4 border-b border-green-100 dark:border-dark-border">
         <span class="text-sm text-gray-500 dark:text-gray-400 font-medium order-2 md:order-1">
@@ -13,7 +14,11 @@ $especieArvore = htmlspecialchars($arvore['especie']);
         <h3 class="text-2xl md:text-3xl font-bold text-green-700 dark:text-dark-primary text-center md:text-left flex-grow px-0 md:px-4 order-1 md:order-2">
             <?php echo $nomeCientificoArvore; ?>
         </h3>
-        <button class="expand-btn bg-yellow-600 dark:bg-dark-secondary hover:bg-yellow-500 dark:hover:bg-orange-600 text-white px-5 py-3 rounded-lg transition-all duration-300 min-w-[120px] font-medium transform hover:scale-105 order-3" aria-expanded="false" aria-controls="details-<?php echo $idArvore; ?>">
+        <button
+            class="expand-btn bg-yellow-600 dark:bg-dark-secondary hover:bg-yellow-500 dark:hover:bg-orange-600 text-white px-5 py-3 rounded-lg transition-all duration-300 min-w-[120px] font-medium transform hover:scale-105 order-3"
+            aria-expanded="false"
+            aria-controls="details-<?php echo $idArvore; ?>"
+            aria-label="Expandir detalhes da árvore <?php echo $nomeCientificoArvore; ?>">
             Expandir
         </button>
     </div>
