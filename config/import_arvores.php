@@ -1,28 +1,23 @@
 <?php
 require __DIR__ . '/../conexao.php';
-
-// Verifica se o arquivo CSV existe
 $csvFile = __DIR__ . '/data/dados_arvore.csv';
+
 if (!file_exists($csvFile)) {
     die("Arquivo CSV não encontrado em: $csvFile");
 }
 
 try {
-    // Inicia o contador e o tempo de execução
     $count = 0;
     $startTime = microtime(true);
     echo "Iniciando importação...\n";
 
-    // Abre o arquivo CSV
     $handle = fopen($csvFile, 'r');
     if ($handle === false) {
         throw new Exception("Não foi possível abrir o arquivo CSV");
     }
 
-    // Pula o cabeçalho (se existir)
     fgetcsv($handle);
 
-    // Prepara a query de inserção
     $sql = "INSERT INTO arvore (
         NOME_C, NAT_EXO, HORARIO, LOCALIZACAO, VEGETACAO, ESPECIE, 
         DIAMETRO_PEITO, ESTADO_FITOSSANITARIO, ESTADO_TRONCO, ESTADO_COPA, 
@@ -34,25 +29,20 @@ try {
     )";
 
     $stmt = $pdo->prepare($sql);
-
-    // Inicia transação
     $pdo->beginTransaction();
     $batchSize = 100;
 
     while (($data = fgetcsv($handle, 0, ",")) !== false) {
-        // Pula linhas vazias ou incompletas
         if (empty($data[0]) || count($data) < 15) {
             continue;
         }
 
-        // Converte a data para o formato PostgreSQL
         $horario = DateTime::createFromFormat('n/j/Y H:i:s', trim($data[0]));
         if ($horario === false) {
             echo "Aviso: Formato de data inválido na linha " . ($count + 1) . ": " . $data[0] . "\n";
             continue;
         }
 
-        // Prepara os dados
         $params = [
             ':nome_c' => trim($data[3]),
             ':nat_exo' => (strtoupper(trim($data[5])) === 'NATIVA') ? 'NATIVA' : 'EXOTICA',
@@ -70,12 +60,8 @@ try {
             ':acessibilidade' => 'ADEQUADO',
             ':curiosidade' => trim($data[6])
         ];
-
-        // Executa a inserção
         $stmt->execute($params);
         $count++;
-
-        // Commit periódico para melhor performance
         if ($count % $batchSize === 0) {
             $pdo->commit();
             $pdo->beginTransaction();
@@ -83,18 +69,14 @@ try {
         }
     }
 
-    // Finaliza a transação
     $pdo->commit();
     fclose($handle);
-
-    // Exibe estatísticas finais
     $executionTime = round(microtime(true) - $startTime, 2);
     echo "\nImportação concluída com sucesso!\n";
     echo "Total de registros inseridos: $count\n";
     echo "Tempo de execução: $executionTime segundos\n";
 
 } catch (PDOException $e) {
-    // Em caso de erro, faz rollback
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }

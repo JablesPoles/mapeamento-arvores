@@ -9,7 +9,7 @@ $especieArvore = htmlspecialchars($arvore['especie']);
 <article class="tree-card bg-white dark:bg-dark-card rounded-xl shadow-md dark:shadow-lg overflow-hidden transition-all duration-300 hover:shadow-lg border-l-8 border-green-600 dark:border-dark-primary">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-green-50 dark:bg-dark-card-header p-6 gap-4 border-b border-green-100 dark:border-dark-border">
         <span class="text-sm text-gray-500 dark:text-gray-400 font-medium order-2 md:order-1">
-            <?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($arvore['horario']))); ?>
+            <?php echo "#" . $idArvore . " - " . htmlspecialchars(date('d/m/Y H:i', strtotime($arvore['horario']))); ?>
         </span>
         <h3 class="text-2xl md:text-3xl font-bold text-green-700 dark:text-dark-primary text-center md:text-left flex-grow px-0 md:px-4 order-1 md:order-2">
             <?php echo $nomeCientificoArvore; ?>
@@ -71,7 +71,7 @@ $especieArvore = htmlspecialchars($arvore['especie']);
                 <h4 class="text-xl font-semibold text-green-700 dark:text-dark-primary mb-4">Galeria</h4>
                 <div class="swiper gallery-swiper-<?php echo $idArvore; ?>">
                     <div class="swiper-wrapper">
-                        <?php if ($imagensArvore): ?>
+                        <?php if (!empty($imagensArvore)): // Modificado para verificar se $imagensArvore não está vazia ?>
                             <?php foreach ($imagensArvore as $tipo => $url): ?>
                                 <div class="swiper-slide bg-gray-100 dark:bg-gray-600">
                                     <img src="<?php echo htmlspecialchars($url); ?>"

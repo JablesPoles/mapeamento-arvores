@@ -1,12 +1,4 @@
 <?php
-// src/api_functions.php
-
-/**
- * Consulta a API PlantNet para obter imagens da árvore pelo nome científico.
- *
- * @param string $nomeCientifico Nome científico da árvore.
- * @return array|null Array associativo com URLs das imagens por tipo ou null se não encontrar.
- */
 function buscarImagensPlantNet($nomeCientifico) {
     $apiUrl = "https://api.plantnet.org/v1/projects/k-world-flora/species/" .
               rawurlencode(trim($nomeCientifico)) . "?lang=pt-br&truncated=true";
@@ -14,10 +6,7 @@ function buscarImagensPlantNet($nomeCientifico) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    // Em ambiente de produção, a verificação SSL deve estar habilitada para garantir segurança.
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Alterar para true em produção.
-
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); 
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);

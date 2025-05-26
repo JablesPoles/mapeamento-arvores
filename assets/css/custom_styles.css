@@ -1,14 +1,13 @@
-/* assets/css/custom_styles.css */
 .swiper {
     width: 100%;
-    height: 300px; /* Ou ajuste conforme necessidade */
+    height: 300px;
     border-radius: 0.5rem;
     margin-top: 1rem;
-    background-color: #f7faf7; /* Cor de fundo para modo claro */
+    background-color: #f7faf7;
 }
 html.dark .swiper {
-    background-color: #2d3748; /* Cor de fundo para modo escuro */
-    color: #2d3748; /* Cor clara para o texto no modo escuro */
+    background-color: #2d3748;
+    color: #2d3748;
 }
 .swiper-slide {
     display: flex;
@@ -16,7 +15,7 @@ html.dark .swiper {
     align-items: center;
     height: 100%;
     text-align: center;
-    overflow: hidden; /* Evita que a legenda da imagem vaze se a imagem não carregar */
+    overflow: hidden;
 }
 .swiper-slide img {
     display: block;
@@ -26,27 +25,26 @@ html.dark .swiper {
     border-radius: 0.5rem;
 }
 .swiper-button-next, .swiper-button-prev {
-    color: #4CAF50; /* Cor primária */
-    padding: 0 15px; /* Adiciona um pouco de preenchimento para melhor clique */
-    --swiper-navigation-size: 30px; /* Ajusta o tamanho dos ícones */
+    color: #4CAF50;
+    padding: 0 15px;
+    --swiper-navigation-size: 30px;
 }
 html.dark .swiper-button-next, html.dark .swiper-button-prev {
-    color: #FFA000; /* Cor secundária para modo escuro */
+    color: #FFA000;
 }
 .swiper-pagination-bullet-active {
-    background: #4CAF50; /* Cor primária */
+    background: #4CAF50;
 }
 html.dark .swiper-pagination-bullet-active {
-    background: #FFA000; /* Cor secundária para modo escuro */
+    background: #FFA000;
 }
 
-/* Estilos globais que estavam no seu <style> original */
 html, body {
     height: 100%;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 body {
-    padding-top: 5rem; /* Ajuste conforme a altura do seu header fixo */
+    padding-top: 5rem;
     display: flex;
     flex-direction: column;
 }
@@ -57,16 +55,14 @@ main {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Ajustes para o card expansível (opcional, mas pode melhorar a animação) */
 .tree-details {
     transition: max-height 0.7s ease-in-out, padding-top 0.7s ease-in-out, padding-bottom 0.7s ease-in-out, opacity 0.5s ease-in-out;
-    opacity: 0; /* Começa invisível */
+    opacity: 0;
     padding-top: 0;
     padding-bottom: 0;
 }
-.tree-details.max-h-\[9999px\] { /* Use o nome da classe Tailwind que você definiu */
+.tree-details.max-h-\[9999px\] {
     opacity: 1;
-    padding-top: 2rem; /* p-8 do Tailwind */
-    padding-bottom: 2rem; /* p-8 do Tailwind */
+    padding-top: 2rem;
+    padding-bottom: 2rem;
 }
-

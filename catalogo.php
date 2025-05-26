@@ -1,5 +1,5 @@
 <?php
-require 'conexao.php'; // Conexão com o banco de dados
+require 'conexao.php'; 
 require __DIR__ . '/src/db_functions.php';
 require __DIR__ . '/src/api_functions.php';
 

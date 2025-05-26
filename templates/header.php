@@ -3,18 +3,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Determina o prefixo do caminho baseado na localização do script atual
 $isInsideAdminFolder = strpos($_SERVER['PHP_SELF'], '/admin/') !== false;
 $pathPrefix = $isInsideAdminFolder ? '../' : '';
 
 $currentPage = basename($_SERVER['PHP_SELF']);
-$pageTitle = $_SESSION['current_page_title'] ?? ''; // Tenta pegar título da sessão primeiro
+$pageTitle = $_SESSION['current_page_title'] ?? '';
 
-if (empty($pageTitle)) { // Fallback se não definido pela página que incluiu
+if (empty($pageTitle)) {
     if ($isInsideAdminFolder) {
         switch ($currentPage) {
             case 'admin.php':
-                $pageTitle = 'Cadastro de Árvore'; // Título para admin/admin.php
+                $pageTitle = 'Cadastro de Árvore';
                 break;
             case 'login_admin.php':
                 $pageTitle = 'Login Administrativo';
@@ -23,10 +22,10 @@ if (empty($pageTitle)) { // Fallback se não definido pela página que incluiu
                 $pageTitle = 'Gerenciar Administradores';
                 break;
             default:
-                $pageTitle = 'Painel Administrativo'; // Título padrão para outras páginas em /admin/
+                $pageTitle = 'Painel Administrativo';
                 break;
         }
-    } else { // Páginas na raiz do projeto
+    } else {
         switch ($currentPage) {
             case 'index.php':
                 $pageTitle = 'Página Inicial';
@@ -34,9 +33,8 @@ if (empty($pageTitle)) { // Fallback se não definido pela página que incluiu
             case 'catalogo.php':
                 $pageTitle = 'Catálogo de Árvores';
                 break;
-            // Adicione outros casos para páginas na raiz se necessário
             default:
-                $pageTitle = 'Catálogo de Árvores'; // Título padrão para páginas na raiz
+                $pageTitle = 'Catálogo de Árvores';
                 break;
         }
     }
@@ -66,10 +64,10 @@ if (empty($pageTitle)) { // Fallback se não definido pela página que incluiu
                 const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 if (theme === 'dark' || (!theme && systemPrefersDark)) {
                     document.documentElement.classList.add('dark');
-                } else { // Garante que o modo claro seja aplicado se não houver preferência ou for 'light'
+                } else {
                     document.documentElement.classList.remove('dark');
                 }
-            } catch (e) { /* Ignora erro */ }
+            } catch (e) {}
         })();
     </script>
     <script>
@@ -85,7 +83,7 @@ if (empty($pageTitle)) { // Fallback se não definido pela página que incluiu
                         'dark-text': '#e2e8f0', 'dark-primary': '#38a169', 'dark-primary-hover': '#2f855a',
                         'dark-secondary': '#dd6b20', 'dark-border': '#4a5568',
                         'dark-input-border': '#4A5568', 
-                        'dark-input-bg': '#2D3748',    
+                        'dark-input-bg': '#2D3748',
                         'dark-input-focus-ring': '#38A169', 
                         'dark-remove-btn-bg': '#C53030', 
                         'dark-remove-btn-hover-bg': '#9B2C2C'
@@ -110,9 +108,9 @@ if (empty($pageTitle)) { // Fallback se não definido pela página que incluiu
            class="text-xl sm:text-2xl md:text-3xl font-bold hover:opacity-80 transition-opacity" data-aos="fade-down" data-aos-delay="100">
             <?php 
                 if ($isInsideAdminFolder) {
-                    echo htmlspecialchars($pageTitle); // Mostra o título específico da página admin
+                    echo htmlspecialchars($pageTitle);
                 } else {
-                    echo 'Catálogo de Árvores'; // Título geral para o site
+                    echo 'Catálogo de Árvores';
                 }
             ?>
         </a>
@@ -149,4 +147,4 @@ if (empty($pageTitle)) { // Fallback se não definido pela página que incluiu
         </nav>
     </div>
 </header>
-<div class="h-20"></div> 
+<div class="h-20"></div>
