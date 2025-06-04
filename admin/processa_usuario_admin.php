@@ -1,13 +1,12 @@
 <?php
 session_start();
-// Caminhos para conexao.php e db_functions.php são um nível acima (../)
 require __DIR__ . '/../conexao.php'; 
 require __DIR__ . '/../src/db_functions.php';
 
 if (!isset($_SESSION['admin_logado']) || $_SESSION['admin_logado'] !== true) {
     $_SESSION['mensagem_admin_usuarios'] = 'Acesso não autorizado.';
     $_SESSION['tipo_mensagem_admin_usuarios'] = 'error';
-    header('Location: login_admin.php'); // Redireciona para login dentro da pasta admin
+    header('Location: login_admin.php'); 
     exit;
 }
 
@@ -41,7 +40,7 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['tipo_mensagem_admin_usuarios'] = 'error';
         }
     }
-    header('Location: gerenciar_usuarios_admin.php'); // Redireciona para a mesma pasta
+    header('Location: gerenciar_usuarios_admin.php'); 
     exit;
 
 } elseif ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -113,13 +112,13 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['mensagem_admin_usuarios'] = 'Erro ao excluir administrador ou administrador não encontrado.';
         $_SESSION['tipo_mensagem_admin_usuarios'] = 'error';
     }
-    header('Location: gerenciar_usuarios_admin.php'); // Redireciona para a mesma pasta
+    header('Location: gerenciar_usuarios_admin.php'); 
     exit;
 
 } else {
     $_SESSION['mensagem_admin_usuarios'] = 'Ação inválida.';
     $_SESSION['tipo_mensagem_admin_usuarios'] = 'error';
-    header('Location: gerenciar_usuarios_admin.php'); // Redireciona para a mesma pasta
+    header('Location: gerenciar_usuarios_admin.php'); 
     exit;
 }
 ?>

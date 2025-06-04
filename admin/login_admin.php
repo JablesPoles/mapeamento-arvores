@@ -5,11 +5,9 @@ require __DIR__ . '/../src/db_functions.php';
 
 $erro_login = '';
 $aviso_necessidade_login = '';
-
-// Verifica se há uma mensagem de necessidade de login vinda de outra página
 if (isset($_SESSION['aviso_login_necessario'])) {
     $aviso_necessidade_login = $_SESSION['aviso_login_necessario'];
-    unset($_SESSION['aviso_login_necessario']); // Limpa a mensagem após exibir
+    unset($_SESSION['aviso_login_necessario']); 
 }
 
 if (isset($_SESSION['admin_logado']) && $_SESSION['admin_logado'] === true) {
@@ -39,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$_SESSION['current_page_title'] = 'Login Administrativo'; // Para o header.php
+$_SESSION['current_page_title'] = 'Login Administrativo'; 
 if (file_exists(__DIR__ . '/../templates/header.php')) {
     include __DIR__ . '/../templates/header.php';
 } else {

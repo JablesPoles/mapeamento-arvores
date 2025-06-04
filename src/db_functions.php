@@ -1,65 +1,58 @@
 <?php
-// src/db_functions.php
-
-/**
- * Retorna o total de árvores cadastradas, com opção de filtro por nome científico ou nome popular.
- *
- * @param PDO $pdo Instância da conexão PDO.
- * @param string $filtro Termo de busca (opcional).
- * @return int Total de árvores encontradas.
- */
-function contarTotalArvores(PDO $pdo, string $filtro = ''): int {
-    $sqlContagem = "SELECT COUNT(DISTINCT arvore.id) AS total
-                        FROM arvore
-                        LEFT JOIN NOMES_POPULARES_ARVORE npa ON arvore.id = npa.FK_ARVORE
-                        LEFT JOIN NOMES_POPULARES np ON npa.FK_NP = np.ID_NOME";
+// UPDATED: Function signature to include $id_filtro
+function contarTotalArvores(PDO $pdo, string $filtro_texto = '', ?int $id_filtro = null): int {
+    $sqlContagemBase = "SELECT COUNT(DISTINCT arvore.id) AS total FROM arvore";
+    $joins = " LEFT JOIN NOMES_POPULARES_ARVORE npa ON arvore.id = npa.FK_ARVORE
+               LEFT JOIN NOMES_POPULARES np ON npa.FK_NP = np.ID_NOME";
+    $whereClause = "";
     $params = [];
-    if (!empty($filtro)) {
-        // Aplica filtro por nome científico ou nome popular, case-insensitive
-        $sqlContagem .= " WHERE (LOWER(arvore.nome_c) LIKE :filtro OR LOWER(np.NOME) LIKE :filtro)";
-        $params[':filtro'] = '%' . strtolower($filtro) . '%';
-    }
 
+    if ($id_filtro !== null && $id_filtro > 0) {
+        // Se busca por ID, ignora o filtro de texto
+        $whereClause = " WHERE arvore.id = :id_filtro";
+        $params[':id_filtro'] = $id_filtro;
+        $sqlContagem = $sqlContagemBase . $whereClause; // Joins não são necessários para contar por ID único
+    } elseif (!empty($filtro_texto)) {
+        $whereClause = " WHERE (LOWER(arvore.nome_c) LIKE :filtro_texto OR LOWER(np.NOME) LIKE :filtro_texto)";
+        $params[':filtro_texto'] = '%' . strtolower($filtro_texto) . '%';
+        $sqlContagem = $sqlContagemBase . $joins . $whereClause; // Joins são necessários para busca por nome
+    } else {
+        $sqlContagem = $sqlContagemBase; // Sem filtro, conta todas
+    }
+    
     $stmtContagem = $pdo->prepare($sqlContagem);
     $stmtContagem->execute($params);
     return (int) $stmtContagem->fetchColumn();
 }
 
-/**
- * Retorna uma lista paginada de árvores, incluindo nomes populares concatenados, com filtro opcional.
- *
- * @param PDO $pdo Instância da conexão PDO.
- * @param string $filtro Termo de busca (opcional).
- * @param int $offset Posição inicial da página.
- * @param int $itensPorPagina Quantidade de itens por página.
- * @return array Lista de árvores.
- */
-function buscarArvoresPaginadas(PDO $pdo, string $filtro = '', int $offset = 0, int $itensPorPagina = 10): array {
-    $sql = "SELECT arvore.*, STRING_AGG(DISTINCT np.NOME, ', ' ORDER BY np.NOME) AS nomes_populares
-                  FROM arvore
-                  LEFT JOIN NOMES_POPULARES_ARVORE npa ON arvore.id = npa.FK_ARVORE
-                  LEFT JOIN NOMES_POPULARES np ON npa.FK_NP = np.ID_NOME";
+// UPDATED: Function signature to include $id_filtro
+function buscarArvoresPaginadas(PDO $pdo, string $filtro_texto = '', int $offset = 0, int $itensPorPagina = 10, ?int $id_filtro = null): array {
+    $sqlBase = "SELECT arvore.*, STRING_AGG(DISTINCT np.NOME, ', ' ORDER BY np.NOME) AS nomes_populares 
+                FROM arvore";
+    $joins = " LEFT JOIN NOMES_POPULARES_ARVORE npa ON arvore.id = npa.FK_ARVORE
+               LEFT JOIN NOMES_POPULARES np ON npa.FK_NP = np.ID_NOME";
+    $whereClause = "";
     $paramsParaQuery = [];
 
-    if (!empty($filtro)) {
-        // Subconsulta para encontrar IDs de árvores que correspondem ao filtro
-        // Isso é necessário por causa do GROUP BY na query principal
-        $sql .= " WHERE arvore.id IN (
-                    SELECT a.id FROM arvore a
-                    LEFT JOIN NOMES_POPULARES_ARVORE npa_sub ON a.id = npa_sub.FK_ARVORE
-                    LEFT JOIN NOMES_POPULARES np_sub ON npa_sub.FK_NP = np_sub.ID_NOME
-                    WHERE (LOWER(a.nome_c) LIKE :filtro OR LOWER(np_sub.NOME) LIKE :filtro)
-                    GROUP BY a.id
-                  )";
-        $paramsParaQuery[':filtro'] = '%' . strtolower($filtro) . '%';
+    if ($id_filtro !== null && $id_filtro > 0) {
+        // Se busca por ID, ignora o filtro de texto
+        $whereClause = " WHERE arvore.id = :id_filtro";
+        $paramsParaQuery[':id_filtro'] = $id_filtro;
+        $sql = $sqlBase . $joins . $whereClause; // Mantém joins para buscar nomes populares
+    } elseif (!empty($filtro_texto)) {
+        $whereClause = " WHERE (LOWER(arvore.nome_c) LIKE :filtro_texto OR LOWER(np.NOME) LIKE :filtro_texto)";
+        $paramsParaQuery[':filtro_texto'] = '%' . strtolower($filtro_texto) . '%';
+        $sql = $sqlBase . $joins . $whereClause;
+    } else {
+        $sql = $sqlBase . $joins; // Sem filtro, busca todas
     }
 
-    $sql .= " GROUP BY arvore.id ORDER BY arvore.horario DESC, arvore.nome_c ASC LIMIT :limit OFFSET :offset";
+    $sql .= " GROUP BY arvore.id ORDER BY arvore.horario DESC LIMIT :limit OFFSET :offset";
 
     $stmt = $pdo->prepare($sql);
 
-    if (!empty($filtro)) {
-        $stmt->bindValue(':filtro', $paramsParaQuery[':filtro'], PDO::PARAM_STR);
+    foreach ($paramsParaQuery as $key => $value) {
+        $stmt->bindValue($key, $value);
     }
     $stmt->bindValue(':limit', $itensPorPagina, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -68,15 +61,8 @@ function buscarArvoresPaginadas(PDO $pdo, string $filtro = '', int $offset = 0, 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-/**
- * Busca links de imagens em cache para uma espécie (usando nome_c da tabela arvore),
- * filtrando categorias específicas.
- *
- * @param PDO $pdo Instância da conexão PDO.
- * @param string $nomeCientificoCompleto Nome científico da espécie (com autor, da coluna arvore.nome_c).
- * @return array|null Array associativo com categorias e links das imagens, ou null se não houver.
- */
-function buscarImagensCache(PDO $pdo, string $nomeCientificoCompleto): ?array {
+// --- Funções restantes permanecem as mesmas da versão anterior ---
+function buscarImagensCache($pdo, $nomeCientificoOuPopular) {
     $sql = "
         SELECT
             L.LINK,
@@ -90,107 +76,79 @@ function buscarImagensCache(PDO $pdo, string $nomeCientificoCompleto): ?array {
         JOIN
             ARVORE A ON A.ID = CL.FK_ARVORE
         WHERE
-            LOWER(A.nome_c) = LOWER(:nome_cientifico_completo) 
-            AND C.NOME_CATEGORIA IN ('fruit', 'leaf', 'bark', 'habit', 'flower') 
+            (A.ESPECIE = :termo_busca OR A.NOME_C = :termo_busca) 
+            AND C.NOME_CATEGORIA IN ('imagem_fruto', 'imagem_folha', 'imagem_casca', 'imagem_habito', 'imagem_flor')
     ";
-    // Nota: A API PlantNet usa 'fruit', 'leaf', etc.
-    // Se você tem 'imagem_fruto', 'imagem_folha' no seu banco para o cache da PlantNet,
-    // ajuste o IN(...) para ('fruit', 'leaf', 'bark', 'habit', 'flower')
-    // e mapeie de volta para 'imagem_fruto' etc., ao retornar, se necessário.
-    // Ou, melhor ainda, salve no cache com os nomes da API PlantNet ('fruit', 'leaf', etc.)
-
     $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':nome_cientifico_completo', $nomeCientificoCompleto);
+    $stmt->bindParam(':termo_busca', $nomeCientificoOuPopular);
     $stmt->execute();
     $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $imagensCache = [];
     foreach ($resultados as $resultado) {
-        // Mapeia os nomes de categoria da API PlantNet para as chaves desejadas
-        $tipoImagem = strtolower($resultado['nome_categoria']); // ex: 'leaf', 'flower'
+        $tipoImagem = str_replace('imagem_', '', $resultado['nome_categoria']);
         $imagensCache[$tipoImagem] = $resultado['link'];
     }
     return !empty($imagensCache) ? $imagensCache : null;
 }
 
-
-/**
- * Obtém o ID da árvore a partir do nome científico completo (com autor).
- *
- * @param PDO $pdo Instância da conexão PDO.
- * @param string $nomeCientificoCompleto Nome científico da espécie com autor (da coluna arvore.nome_c).
- * @return int|null ID da árvore ou null se não encontrada.
- */
-function buscarIdArvorePorNomeCientificoCompleto(PDO $pdo, string $nomeCientificoCompleto): ?int {
-    // Busca case-insensitive
-    $stmt = $pdo->prepare("SELECT id FROM arvore WHERE LOWER(nome_c) = LOWER(:nome_c) LIMIT 1");
-    $stmt->execute([':nome_c' => $nomeCientificoCompleto]);
+function buscarIdArvorePorNomeCientifico(PDO $pdo, string $nomeCientificoOuPopular): ?int {
+    $stmt = $pdo->prepare("SELECT id FROM arvore WHERE especie = :termo_busca OR nome_c = :termo_busca LIMIT 1");
+    $stmt->execute([':termo_busca' => $nomeCientificoOuPopular]);
     $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
     return $resultado ? (int)$resultado['id'] : null;
 }
 
-/**
- * Salva links de imagens no cache, associando-os à árvore e categoria correspondente.
- * As categorias devem ser as usadas pela API PlantNet ('fruit', 'leaf', etc.).
- *
- * @param PDO $pdo Instância da conexão PDO.
- * @param int $idArvore ID da árvore.
- * @param array $linksPorCategoria Array associativo com categorias (fruit, leaf, bark, habit, flower) e URLs.
- */
-function salvarImagensCache(PDO $pdo, int $idArvore, array $linksPorCategoria) {
-    // Busca IDs das categorias da API PlantNet
-    $categoriasPlantNet = ['fruit', 'leaf', 'bark', 'habit', 'flower'];
-    $placeholders = implode(',', array_fill(0, count($categoriasPlantNet), '?'));
-    $sqlCat = "SELECT ID_CATEGORIA, NOME_CATEGORIA FROM CATEGORIA WHERE LOWER(NOME_CATEGORIA) IN ($placeholders)";
-    $stmtCat = $pdo->prepare($sqlCat);
-    $stmtCat->execute(array_map('strtolower', $categoriasPlantNet));
-    $mapaCategoriasDB = $stmtCat->fetchAll(PDO::FETCH_KEY_PAIR); // NOME_CATEGORIA => ID_CATEGORIA
 
-    foreach ($linksPorCategoria as $categoriaNomeApi => $url) {
-        $categoriaNomeApiLower = strtolower($categoriaNomeApi);
-        if (!isset($mapaCategoriasDB[$categoriaNomeApiLower])) {
-            error_log("Categoria da API PlantNet '$categoriaNomeApiLower' não encontrada na tabela CATEGORIA do banco.");
-            continue; // Pula se a categoria da API não estiver no nosso banco
-        }
-        $categoriaIdDB = $mapaCategoriasDB[$categoriaNomeApiLower];
+function salvarImagensCache($pdo, $idArvore, $linksPorCategoria) {
+    $mapaCategorias = [
+        'fruit'  => 1, 
+        'leaf'   => 2, 
+        'bark'   => 3, 
+        'habit'  => 4, 
+        'flower' => 5, 
+    ];
 
-        // Insere o link se não existir, e obtém o ID
-        $stmtLink = $pdo->prepare("INSERT INTO LINKS (LINK) VALUES (:url) ON CONFLICT (LINK) DO NOTHING RETURNING ID_LINKS");
-        $stmtLink->execute([':url' => $url]);
-        $idLink = $stmtLink->fetchColumn();
-
-        if (!$idLink) { // Se ON CONFLICT ocorreu, o link já existia, então buscamos o ID
-            $stmtGetLink = $pdo->prepare("SELECT ID_LINKS FROM LINKS WHERE LINK = :url");
-            $stmtGetLink->execute([':url' => $url]);
-            $idLink = $stmtGetLink->fetchColumn();
+    foreach ($linksPorCategoria as $categoriaNome => $url) {
+        if (!isset($mapaCategorias[$categoriaNome])) {
+            continue; 
         }
 
-        if ($idLink && $categoriaIdDB) {
-            // Insere a associação, tratando conflitos (se a árvore já tem uma imagem para essa categoria)
-            $stmtRel = $pdo->prepare("
-                INSERT INTO CATEGORIA_LINKS (FK_ARVORE, FK_CATEGORIA, FK_LINKS) 
-                VALUES (:fk_arvore, :fk_categoria, :fk_links)
-                ON CONFLICT (FK_ARVORE, FK_CATEGORIA) DO UPDATE SET FK_LINKS = EXCLUDED.FK_LINKS
-            ");
-            $stmtRel->execute([
-                ':fk_arvore' => $idArvore,
-                ':fk_categoria' => $categoriaIdDB,
-                ':fk_links' => $idLink
+        $categoriaId = $mapaCategorias[$categoriaNome];
+        $stmt = $pdo->prepare("SELECT id_links FROM LINKS WHERE LINK = :url");
+        $stmt->execute([':url' => $url]);
+        $link = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($link && isset($link['id_links'])) {
+            $idLink = $link['id_links'];
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO LINKS (LINK) VALUES (:url) RETURNING id_links"); 
+            $stmt->execute([':url' => $url]);
+            $idLink = $stmt->fetchColumn();
+        }
+
+        if ($idLink) { 
+            $stmt = $pdo->prepare("SELECT 1 FROM categoria_links 
+                WHERE fk_arvore = :arvore AND fk_categoria = :categoria AND fk_links = :link");
+            $stmt->execute([
+                ':arvore' => $idArvore,
+                ':categoria' => $categoriaId,
+                ':link' => $idLink
             ]);
+
+            if (!$stmt->fetch()) {
+                $stmt = $pdo->prepare("INSERT INTO categoria_links (fk_arvore, fk_categoria, fk_links) 
+                      VALUES (:arvore, :categoria, :link)");
+                $stmt->execute([
+                    ':arvore' => $idArvore,
+                    ':categoria' => $categoriaId,
+                    ':link' => $idLink
+                ]);
+            }
         }
     }
 }
 
-// ========================================================================
-// FUNÇÕES PARA GERENCIAMENTO DE ADMINISTRADORES
-// ========================================================================
-
-/**
- * Busca um administrador pelo nome de usuário (case-insensitive).
- * @param PDO $pdo Instância da conexão PDO.
- * @param string $usuario Nome de usuário do administrador.
- * @return array|false Retorna os dados do administrador ou false se não encontrado.
- */
 function buscarAdminPorUsuario(PDO $pdo, string $usuario) {
     $sql = "SELECT id, usuario, nome_completo, senha FROM administradores WHERE LOWER(usuario) = LOWER(:usuario)";
     $stmt = $pdo->prepare($sql);
@@ -199,12 +157,6 @@ function buscarAdminPorUsuario(PDO $pdo, string $usuario) {
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-/**
- * Busca um administrador pelo ID.
- * @param PDO $pdo Instância da conexão PDO.
- * @param int $id ID do administrador.
- * @return array|false Retorna os dados do administrador ou false se não encontrado.
- */
 function buscarAdminPorId(PDO $pdo, int $id) {
     $sql = "SELECT id, usuario, nome_completo FROM administradores WHERE id = :id";
     $stmt = $pdo->prepare($sql);
@@ -213,25 +165,12 @@ function buscarAdminPorId(PDO $pdo, int $id) {
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-/**
- * Lista todos os usuários administradores.
- * @param PDO $pdo Instância da conexão PDO.
- * @return array Lista de administradores.
- */
 function listarAdmins(PDO $pdo): array {
     $sql = "SELECT id, usuario, nome_completo, data_criacao FROM administradores ORDER BY nome_completo ASC";
     $stmt = $pdo->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-/**
- * Cria um novo usuário administrador.
- * @param PDO $pdo Instância da conexão PDO.
- * @param string $usuario Nome de usuário.
- * @param string $senhaHash Senha já processada com password_hash().
- * @param string $nomeCompleto Nome completo do administrador.
- * @return bool True se bem-sucedido, false caso contrário.
- */
 function criarAdmin(PDO $pdo, string $usuario, string $senhaHash, string $nomeCompleto): bool {
     try {
         $sql = "INSERT INTO administradores (usuario, senha, nome_completo) VALUES (:usuario, :senha, :nome_completo)";
@@ -246,15 +185,6 @@ function criarAdmin(PDO $pdo, string $usuario, string $senhaHash, string $nomeCo
     }
 }
 
-/**
- * Atualiza os dados de um usuário administrador.
- * @param PDO $pdo Instância da conexão PDO.
- * @param int $id ID do administrador a ser atualizado.
- * @param string $usuario Novo nome de usuário.
- * @param string $nomeCompleto Novo nome completo.
- * @param string|null $novaSenhaHash Nova senha hasheada (opcional, se for alterar a senha).
- * @return bool True se bem-sucedido, false caso contrário.
- */
 function atualizarAdmin(PDO $pdo, int $id, string $usuario, string $nomeCompleto, ?string $novaSenhaHash = null): bool {
     try {
         if ($novaSenhaHash !== null) {
@@ -276,12 +206,6 @@ function atualizarAdmin(PDO $pdo, int $id, string $usuario, string $nomeCompleto
     }
 }
 
-/**
- * Exclui um usuário administrador.
- * @param PDO $pdo Instância da conexão PDO.
- * @param int $id ID do administrador a ser excluído.
- * @return bool True se bem-sucedido, false caso contrário.
- */
 function excluirAdmin(PDO $pdo, int $id): bool {
     try {
         $sql = "DELETE FROM administradores WHERE id = :id";
@@ -293,7 +217,108 @@ function excluirAdmin(PDO $pdo, int $id): bool {
         return false;
     }
 }
-// ========================================================================
-// FIM DAS FUNÇÕES PARA GERENCIAMENTO DE ADMINISTRADORES
-// ========================================================================
+
+function buscarArvorePorId(PDO $pdo, int $id) {
+    $stmt = $pdo->prepare("SELECT * FROM arvore WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+function buscarNomesPopularesPorArvoreId(PDO $pdo, int $id_arvore): array {
+    $stmt = $pdo->prepare("
+        SELECT np.nome FROM nomes_populares np
+        JOIN nomes_populares_arvore npa ON np.id_nome = npa.fk_np
+        WHERE npa.fk_arvore = :id_arvore
+        ORDER BY np.nome
+    ");
+    $stmt->execute([':id_arvore' => $id_arvore]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+function atualizarArvore(PDO $pdo, int $id_arvore, array $dados): bool {
+    $sql = "UPDATE arvore SET
+                nome_c = :nome_c, nat_exo = :nat_exo, horario = :horario, localizacao = :localizacao, 
+                vegetacao = :vegetacao, especie = :especie, diametro_peito = :diametro_peito, 
+                estado_fitossanitario = :estado_fitossanitario, estado_tronco = :estado_tronco,
+                estado_copa = :estado_copa, tamanho_calcada = :tamanho_calcada, espaco_arvore = :espaco_arvore, 
+                raizes = :raizes, acessibilidade = :acessibilidade, curiosidade = :curiosidade,
+                latitude = :latitude, longitude = :longitude 
+            WHERE id = :id_arvore";
+    
+    $stmt = $pdo->prepare($sql);
+
+    return $stmt->execute([
+        ':nome_c' => $dados['nome_c'],
+        ':nat_exo' => $dados['nat_exo'],
+        ':horario' => $dados['horario'],
+        ':localizacao' => $dados['localizacao'],
+        ':vegetacao' => $dados['vegetacao'] ?: null,
+        ':especie' => $dados['especie'],
+        ':diametro_peito' => $dados['diametro_peito'],
+        ':estado_fitossanitario' => $dados['estado_fitossanitario'],
+        ':estado_tronco' => $dados['estado_tronco'],
+        ':estado_copa' => $dados['estado_copa'],
+        ':tamanho_calcada' => $dados['tamanho_calcada'],
+        ':espaco_arvore' => $dados['espaco_arvore'] ?: null,
+        ':raizes' => $dados['raizes'] ?: null,
+        ':acessibilidade' => $dados['acessibilidade'] ?: null,
+        ':curiosidade' => $dados['curiosidade'] ?: null,
+        ':latitude' => !empty($dados['latitude']) ? $dados['latitude'] : null,      
+        ':longitude' => !empty($dados['longitude']) ? $dados['longitude'] : null,   
+        ':id_arvore' => $id_arvore
+    ]);
+}
+
+function atualizarNomesPopulares(PDO $pdo, int $id_arvore, array $nomes_populares) {
+    $stmt_delete = $pdo->prepare("DELETE FROM nomes_populares_arvore WHERE fk_arvore = :id_arvore");
+    $stmt_delete->execute([':id_arvore' => $id_arvore]);
+    if (empty($nomes_populares)) {
+        return; 
+    }
+
+    $sqlInsNp = "INSERT INTO nomes_populares (nome) VALUES (:nome) ON CONFLICT (LOWER(nome)) DO NOTHING RETURNING id_nome";
+    $stmtInsNp = $pdo->prepare($sqlInsNp);
+    $sqlGetIdNp = "SELECT id_nome FROM nomes_populares WHERE LOWER(nome) = LOWER(:nome)";
+    $stmtGetIdNp = $pdo->prepare($sqlGetIdNp);
+    $sqlRel = "INSERT INTO nomes_populares_arvore (fk_arvore, fk_np) VALUES (:fk_arvore, :fk_np) ON CONFLICT DO NOTHING";
+    $stmtRel = $pdo->prepare($sqlRel);
+
+    foreach ($nomes_populares as $nome) {
+        if (empty(trim($nome))) continue;
+
+        $stmtInsNp->execute([':nome' => $nome]);
+        $idNp = $stmtInsNp->fetchColumn();
+
+        if (!$idNp) {
+            $stmtGetIdNp->execute([':nome' => $nome]);
+            $idNp = $stmtGetIdNp->fetchColumn();
+        }
+
+        if ($idNp) {
+            $stmtRel->execute([':fk_arvore' => $id_arvore, ':fk_np' => $idNp]);
+        }
+    }
+}
+
+function deletarArvore(PDO $pdo, int $id_arvore): bool {
+    try {
+        $pdo->beginTransaction();
+        $stmt_links = $pdo->prepare("DELETE FROM categoria_links WHERE fk_arvore = :id_arvore");
+        $stmt_links->execute([':id_arvore' => $id_arvore]);
+
+        $stmt1 = $pdo->prepare("DELETE FROM nomes_populares_arvore WHERE fk_arvore = :id_arvore");
+        $stmt1->execute([':id_arvore' => $id_arvore]);
+        
+        $stmt2 = $pdo->prepare("DELETE FROM arvore WHERE id = :id_arvore");
+        $stmt2->execute([':id_arvore' => $id_arvore]);
+
+        $pdo->commit();
+        return true;
+
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        error_log("Erro ao deletar árvore: " . $e->getMessage());
+        return false;
+    }
+}
 ?>

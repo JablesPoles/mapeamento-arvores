@@ -31,7 +31,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
     }
 }
 
-$_SESSION['current_page_title'] = 'Gerenciar Administradores'; // Define o título para o header
+$_SESSION['current_page_title'] = 'Gerenciar Administradores'; 
 if (file_exists(__DIR__ . '/../templates/header.php')) {
     include __DIR__ . '/../templates/header.php';
 } else {
